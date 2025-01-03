@@ -1,0 +1,14 @@
+〈Construct the line perpendicular to ` passing through P.〉〉
+RightAngle(`, P):
+Choose a point A ∈ `
+A, B ← Intersect(Circle(P,A), `)
+C, D ← Intersect(Circle(A, B),Circle(B,A))
+return Line(C, D)
+〈〈Construct a point Z such that |AZ| = |AC||AD|/|AB|.〉〉
+MultiplyOrDivide(A, B, C, D):
+α ← RightAngle(Line(A, C),A)
+E ← Intersect(Circle(A, B),α)
+F ← Intersect(Circle(A, D),α)
+β ← RightAngle(Line(E, C), F)
+γ ← RightAngle(β, F)
+return Intersect(γ, Line(A, C))
