@@ -1,0 +1,100 @@
+LESSON 1
+
+**** Registers *****
+are areas in CPU where data can be processed. CPUs dont operate data on memory, but loaded into registers, processed and written back to memory
+
+*** General purpose registers ***
+Gen purpose coz can contain either data (up to 64 bit) or a memory address (pointer). A value in GPR can be processed through operations like 
+	1. addition
+	2. multiplication
+	3. shifting
+
+In most books, full chapters dedicated to them coz important in OS programming, reverse engineering etc, but in FFmpeg, are like scaffolding and complexities are abstracted away
+
+*** Vector registers **
+Vector (SIMD) registers, have multiple data elements.
+	1. mm registers - MMX, 64 bit sized, historic not used anymore
+	2. xmm		128 bit sized	widely used
+	3. ymm		256 bit sized,	some complications while using
+	4. zmm 		512 bit sized	limited availabililty
+
+
+most calculations in video compression and decompression are integer based in an xmm register
+
+16 bytes ---> 8 words (16 bit integers) ---> 4 double words (32 bit integer) ---> 2 quadwords (64 bit integers)
+
+simple scalar asm
+
+mov r0q, 3
+inc r0q
+dec r0q
+imul r0q, 5
+
+basic vector fxn (SIMD)
+
+%include "x86inc.asm"
+
+SECTION .text
+
+;static void add_values(const uint8_t *src, cons uint8_t *src2)
+INIT_XMM sse2
+cglobal add_values, 2, 2, 2, src, src2
+	movu m0, [srcq]		;xmm0
+	movu m1, [src2q]	;xmm1
+
+	paddb m0, m1       ;p for vector
+	
+	movu [srcq], m0   ; store data at address srcq
+	
+	RET
+	
+
+LESSON 2
+*** LOOPS ***
+mov r0q, 3
+
+.loop:		;.loop means it is a local label, thus can be reused 
+	dec r0q
+	jmp .loop
+
+before making realistic loop, look at FLAGS registers
+we wont use it too much, coz GPR
+
+	* Zero-Flag
+	* Sign-Flag
+	* Overflow-Flag
+
+mov r0q, 3
+
+.loop:
+	;do something
+	dec r0q
+	jg .loop  ;  jump if greater than zero
+
+
+We can also do this, set a register to 0, then increment
+
+xor r0q, r0q			;we can use pxor m0, m0 to zero out entire register
+
+.loop:
+	inc r0q
+	;do something
+	cmp r0q, 3
+	jl .loop ; jump if (r0q - 3) < 0
+
+on some systems is faster than mov r0q, 0, because, put simply, there is no actual load taking place
+
+cmp effectively subtracts the second register from the first and sets FLAGS, but as per the comment, it can be read together with the jump, (jl = jump if less than zero) to jump if r0q < 3.
+
+** Constants **
+SECTION_RODATA			;read only section, macro coz diff OS declare diff
+
+constants_1: db 1,2,3,4		; declare byte uint8_t ----constants_1[4] = {1, 2, 3, 4};
+constants_2: times 2 dw 4,3,2,1	; declare word uint16_t ----constants_2[8] = {4, 3, 2, 1, 4, 3, 2, 1};
+
+These labels, which the assembler converts to a memory address, can then be used in loads (but not stores as they are read-only). Some instructions take a memory address as an operand so they can be used without explicit loads into a register (there are pros and cons to this).
+
+
+
+
+
